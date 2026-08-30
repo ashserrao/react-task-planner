@@ -1,0 +1,88 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 6 6 8;
+  --foreground: 232 232 226;
+  --card: 20 13 13;
+  --card-foreground: 232 232 226;
+  --border: 63 45 45;
+  --input: 63 45 45;
+  --primary: 122 41 56;
+  --primary-foreground: 255 255 255;
+  --secondary: 32 22 22;
+  --secondary-foreground: 232 232 226;
+  --muted: 30 20 20;
+  --muted-foreground: 176 168 163;
+  --accent: 103 199 235;
+  --accent-foreground: 6 6 8;
+  --badge: 44 22 26;
+  --badge-foreground: 240 202 208;
+  --glow: 140 252 251;
+  --destructive: 239 68 68;
+  --destructive-foreground: 255 255 255;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
+    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
+    monospace;
+}
+
+.ripple-effect::before {
+  content: "";
+  position: absolute;
+  width: 200%;
+  height: 200%;
+  background: rgba(140, 252, 251, 0.15);
+  border-radius: 50%;
+  animation: ripple 2s infinite ease-out;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+}
+
+@keyframes ripple {
+  0% {
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 0.6;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0;
+  }
+}
+
+.hive-cell {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: hivePulse 3s ease-in-out infinite;
+}
+
+@keyframes hivePulse {
+  0%,
+  100% {
+    opacity: 0.08;
+    transform: scale(0.85);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hive-cell {
+    animation: none;
+    opacity: 0.15;
+  }
+}
