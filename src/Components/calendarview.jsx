@@ -242,7 +242,7 @@ function CalendarView() {
                               key={idx}
                               className={cn(
                                 "h-1.5 w-1.5 rounded-full",
-                                category.bgColor.replace("/20", ""),
+                                category?.solidBgColor || "",
                               )}
                             />
                           ))}
@@ -288,7 +288,7 @@ function CalendarView() {
                       <span
                         className={cn(
                           "h-2 w-2 flex-shrink-0 rounded-full",
-                          category.bgColor.replace("/20", ""),
+                          category?.solidBgColor || "",
                         )}
                       />
                       <div className="min-w-0 flex-1">

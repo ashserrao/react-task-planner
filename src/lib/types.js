@@ -1,4 +1,3 @@
-import React from "react";
 export const HOURS = Array.from({ length: 24 }, (_, i) => i);
 
 export function getTaskHourRange(task) {
@@ -24,40 +23,54 @@ export const TASK_CATEGORIES = [
   {
     id: "work",
     name: "Work",
+    label: "Work",
     color: "text-sky-300",
     bgColor: "bg-sky-500/20",
+    solidBgColor: "bg-sky-500",
   },
   {
     id: "personal",
     name: "Personal",
+    label: "Personal",
     color: "text-emerald-300",
     bgColor: "bg-emerald-500/20",
+    solidBgColor: "bg-emerald-500",
   },
   {
     id: "study",
     name: "Study",
+    label: "Study",
     color: "text-amber-300",
     bgColor: "bg-amber-500/20",
+    solidBgColor: "bg-amber-500",
   },
   {
     id: "entertainment",
     name: "Entertainment",
+    label: "Entertainment",
     color: "text-fuchsia-300",
     bgColor: "bg-fuchsia-500/20",
+    solidBgColor: "bg-fuchsia-500",
   },
   {
     id: "ashtro",
     name: "Ashtro",
+    label: "Ashtro",
     color: "text-cyan-300",
     bgColor: "bg-cyan-500/20",
+    solidBgColor: "bg-cyan-500",
   },
   {
     id: "other",
     name: "Other",
+    label: "Other",
     color: "text-slate-300",
     bgColor: "bg-slate-500/20",
+    solidBgColor: "bg-slate-500",
   },
 ];
+
+export const CATEGORIES = TASK_CATEGORIES;
 
 const FALLBACK_CATEGORY = TASK_CATEGORIES[TASK_CATEGORIES.length - 1];
 
@@ -66,11 +79,13 @@ export function getCategoryById(id) {
   const normalized = id.toLowerCase();
   const known = TASK_CATEGORIES.find((category) => category.id === normalized);
   if (known) return known;
-  // Sheet categories are freeform text — show unrecognized ones under their own name instead of mislabeling as "Other".
+  const capitalized = id.charAt(0).toUpperCase() + id.slice(1);
   return {
     ...FALLBACK_CATEGORY,
     id: normalized,
-    name: id.charAt(0).toUpperCase() + id.slice(1),
+    name: capitalized,
+    label: capitalized,
+    solidBgColor: "bg-slate-500",
   };
 }
 

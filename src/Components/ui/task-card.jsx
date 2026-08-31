@@ -226,7 +226,7 @@ export function TaskCard({ task, onEdit, isDraggable = true }) {
       <div
         className={cn(
           "absolute left-0 top-4 bottom-4 w-1 rounded-full",
-          category.bgColor.replace("/20", ""),
+          category?.solidBgColor || "",
         )}
       />
     </div>
@@ -248,7 +248,7 @@ export function MiniTaskCard({ task, onClick }) {
         <div
           className={cn(
             "h-2 w-2 rounded-full",
-            category.bgColor.replace("/20", ""),
+            category?.solidBgColor || "",
           )}
         />
         <span

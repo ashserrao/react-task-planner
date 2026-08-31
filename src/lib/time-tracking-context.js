@@ -107,17 +107,20 @@ export function TimeTrackingProvider({ children }) {
     [updateTask],
   );
 
+  const getAllTasks = useCallback(() => tasks, [tasks]);
+
   const value = useMemo(
     () => ({
       selectedDate,
       setSelectedDate,
       getTasksForDate,
+      getAllTasks,
       addTask,
       updateTask,
       deleteTask,
       moveTask,
     }),
-    [selectedDate, getTasksForDate, addTask, updateTask, deleteTask, moveTask],
+    [selectedDate, getTasksForDate, getAllTasks, addTask, updateTask, deleteTask, moveTask],
   );
 
   return (
