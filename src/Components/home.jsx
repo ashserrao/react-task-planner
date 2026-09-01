@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import HiveBackground from "./HiveBackground";
+import HobbyTracker from "./hobbytracker";
 
 const Home = () => {
   const API_URL =
@@ -11,10 +12,10 @@ const Home = () => {
   return (
     <section
       id="home"
-      className="min-h-screen flex items-center justify-center relative overflow-hidden bg-[#000000]"
+      className="min-h-screen relative overflow-hidden"
     >
       <HiveBackground hexRadius={60} viewWidth={900} viewHeight={600} />
-      Task Planner is ready
+      <HobbyTracker />
     </section>
   );
 };

@@ -16,8 +16,6 @@ import Timeline from "./Components/timeline";
 import Login from "./Components/authentication/login";
 import Signup from "./Components/authentication/signup";
 import CalendarView from "./Components/calendarview";
-import ListView from "./Components/listview";
-import ProjectPlanner from "./Components/projecttracker";
 import PrivateRoute from "./Components/authentication/PrivateRoute";
 import { useAuth } from "./Components/authentication/AuthContext";
 
@@ -32,8 +30,6 @@ const Portfolio = () => {
     { name: "home", label: "home", url: "/" },
     { name: "timeline", label: "timeline", url: "/timeline" },
     { name: "calendar", label: "calendar", url: "/calendar" },
-    { name: "list-view", label: "list View", url: "/list-view" },
-    { name: "project-track", label: "Project Track", url: "/project-track" },
   ];
 
   const hideNav =
@@ -74,10 +70,11 @@ const Portfolio = () => {
                   <motion.button
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.95 }}
-                    className={`capitalize font-semibold ${activeSection === section.name
-                      ? "text-[#8cfcfb]"
-                      : "text-[#c2ccaa]"
-                      } hover:text-[#67C7EB] transition-colors`}
+                    className={`capitalize font-semibold ${
+                      activeSection === section.name
+                        ? "text-[#8cfcfb]"
+                        : "text-[#c2ccaa]"
+                    } hover:text-[#67C7EB] transition-colors`}
                   >
                     {section.label}
                   </motion.button>
@@ -130,10 +127,11 @@ const Portfolio = () => {
                 <motion.button
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.95 }}
-                  className={`text-2xl font-bold capitalize ${activeSection === section.name
-                    ? "text-[#8cfcfb]"
-                    : "text-[#c2ccaa]"
-                    } hover:text-[#67C7EB] transition-colors`}
+                  className={`text-2xl font-bold capitalize ${
+                    activeSection === section.name
+                      ? "text-[#8cfcfb]"
+                      : "text-[#c2ccaa]"
+                  } hover:text-[#67C7EB] transition-colors`}
                 >
                   {section.label}
                 </motion.button>
