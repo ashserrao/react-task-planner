@@ -264,7 +264,7 @@ function Timeline({ onEditTask, onAddTask }) {
                               "h-1.5 w-1.5 rounded-full",
                               getCategoryById(
                                 occupied.task.category,
-                              ).bgColor.replace("/20", ""),
+                              )?.solidBgColor || "",
                             )}
                           />
                           {occupied.task.name} continues
