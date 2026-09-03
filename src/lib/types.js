@@ -76,10 +76,10 @@ const FALLBACK_CATEGORY = TASK_CATEGORIES[TASK_CATEGORIES.length - 1];
 
 export function getCategoryById(id) {
   if (!id) return FALLBACK_CATEGORY;
-  const normalized = id.toLowerCase();
+  const normalized = String(id).trim().toLowerCase();
   const known = TASK_CATEGORIES.find((category) => category.id === normalized);
   if (known) return known;
-  const capitalized = id.charAt(0).toUpperCase() + id.slice(1);
+  const capitalized = normalized.charAt(0).toUpperCase() + normalized.slice(1);
   return {
     ...FALLBACK_CATEGORY,
     id: normalized,
@@ -99,8 +99,34 @@ export const PRIORITY_CONFIG = {
   high: { label: "High", color: "text-rose-300", bgColor: "bg-rose-500/20" },
 };
 
+export function getPriorityConfig(priority) {
+  if (!priority) return PRIORITY_CONFIG.medium;
+  const key = String(priority).trim().toLowerCase();
+  return (
+    PRIORITY_CONFIG[key] || {
+      label: key.charAt(0).toUpperCase() + key.slice(1),
+      color: "text-slate-300",
+      bgColor: "bg-slate-500/20",
+    }
+  );
+}
+
 export const STATUS_CONFIG = {
   pending: { label: "Pending" },
   ongoing: { label: "Ongoing" },
   completed: { label: "Completed" },
+  done: { label: "Completed" },
+  "in-progress": { label: "Ongoing" },
+  "in progress": { label: "Ongoing" },
 };
+
+export function getStatusConfig(status) {
+  if (!status) return STATUS_CONFIG.pending;
+  const key = String(status).trim().toLowerCase();
+  return (
+    STATUS_CONFIG[key] || {
+      label: key.charAt(0).toUpperCase() + key.slice(1),
+    }
+  );
+}
+
