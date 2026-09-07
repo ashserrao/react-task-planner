@@ -40,6 +40,14 @@ module.exports = {
         },
         glow: "rgb(var(--glow) / <alpha-value>)",
         destructive: "rgb(var(--destructive) / <alpha-value>)",
+        // Used by the navbar and notification centre (ported from Ashtra).
+        brand: {
+          DEFAULT: "rgb(var(--brand) / <alpha-value>)",
+          strong: "rgb(var(--brand-strong) / <alpha-value>)",
+          deep: "rgb(var(--brand-deep) / <alpha-value>)",
+          fg: "rgb(var(--brand-fg) / <alpha-value>)",
+          soft: "rgb(var(--brand-soft) / <alpha-value>)",
+        },
       },
       keyframes: {
         ripple: {
@@ -83,5 +91,5 @@ module.exports = {
       // => @media (min-width: 1536px) { ... }
     },
   },
-  plugins: [],
+  plugins: [require("tailwindcss-animate")],
 };
