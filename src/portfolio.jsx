@@ -12,12 +12,14 @@ import {
 
 // Component imports
 import Home from "./Components/home";
-import Timeline from "./Components/timeline";
+// import Timeline from "./Components/timeline";
+// import CalendarView from "./Components/calendarview";
+// import ListView from "./Components/listview";
 import Login from "./Components/authentication/login";
 import Signup from "./Components/authentication/signup";
-import CalendarView from "./Components/calendarview";
-import ListView from "./Components/listview";
 import ProjectPlanner from "./Components/projecttracker";
+import ToDoList from "./Components/todo";
+import TimePlanner from "./Components/timeplanner";
 import PrivateRoute from "./Components/authentication/PrivateRoute";
 import { useAuth } from "./Components/authentication/AuthContext";
 
@@ -30,10 +32,9 @@ const Portfolio = () => {
 
   const sections = [
     { name: "home", label: "home", url: "/" },
-    { name: "timeline", label: "timeline", url: "/timeline" },
-    { name: "calendar", label: "calendar", url: "/calendar" },
-    { name: "list-view", label: "list View", url: "/list-view" },
+    { name: "time-planner", label: "Time Planner", url: "/time-planner" },
     { name: "project-track", label: "Project Track", url: "/project-track" },
+    { name: "to-do", label: "To-Do", url: "/todo-list" },
   ];
 
   const hideNav =
@@ -54,30 +55,31 @@ const Portfolio = () => {
   }
 
   return (
-    <div className="bg-[#000000] min-h-screen text-[#c2ccaa] flex flex-col h-screen overflow-scroll">
+    <div className="flex min-h-screen min-w-0 flex-col bg-[#000000] text-[#c2ccaa]">
       {!hideNav && (
-        <header className="fixed top-0 left-0 right-0 z-50 bg-[#6A0C0B]/90 backdrop-blur-md border-b border-black/20">
-          <nav className="container mx-auto px-6 py-4 flex justify-between items-center">
+        <header className="fixed inset-x-0 top-0 z-50 border-b border-black/20 bg-[#6A0C0B]/90 backdrop-blur-md">
+          <nav className="container mx-auto flex min-w-0 items-center justify-between px-4 py-3 sm:px-6 sm:py-4">
             <motion.div
               initial={{ opacity: 0, x: -50 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5 }}
-              className="text-2xl font-display font-semibold text-[#FFFFFF]"
+              className="min-w-0 truncate pr-4 text-xl font-display font-semibold text-[#FFFFFF] sm:text-2xl"
             >
               <NavLink to={"/"}>Ashtro Planner</NavLink>
             </motion.div>
 
             {/* Desktop Menu */}
-            <div className="hidden md:flex items-center space-x-6">
+            <div className="hidden items-center space-x-4 md:flex lg:space-x-6">
               {sections.map((section) => (
                 <NavLink key={section.name} to={section.url}>
                   <motion.button
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.95 }}
-                    className={`capitalize font-semibold ${activeSection === section.name
-                      ? "text-[#8cfcfb]"
-                      : "text-[#c2ccaa]"
-                      } hover:text-[#67C7EB] transition-colors`}
+                    className={`capitalize font-semibold ${
+                      activeSection === section.name
+                        ? "text-[#8cfcfb]"
+                        : "text-[#c2ccaa]"
+                    } hover:text-[#67C7EB] transition-colors`}
                   >
                     {section.label}
                   </motion.button>
@@ -130,10 +132,11 @@ const Portfolio = () => {
                 <motion.button
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.95 }}
-                  className={`text-2xl font-bold capitalize ${activeSection === section.name
-                    ? "text-[#8cfcfb]"
-                    : "text-[#c2ccaa]"
-                    } hover:text-[#67C7EB] transition-colors`}
+                  className={`text-2xl font-bold capitalize ${
+                    activeSection === section.name
+                      ? "text-[#8cfcfb]"
+                      : "text-[#c2ccaa]"
+                  } hover:text-[#67C7EB] transition-colors`}
                 >
                   {section.label}
                 </motion.button>
@@ -154,16 +157,17 @@ const Portfolio = () => {
       </AnimatePresence>
 
       {/* Routes */}
-      <main className={hideNav ? "" : "pt-24"}>
+      <main
+        className={`min-w-0 flex-1 ${hideNav ? "" : "pt-[4.5rem] sm:pt-24"}`}
+      >
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route element={<PrivateRoute />}>
             <Route path="/" element={<Home />} />
-            <Route path="/timeline" element={<Timeline />} />
-            <Route path="/calendar" element={<CalendarView />} />
-            <Route path="/list-view" element={<ListView />} />
+            <Route path="/time-planner" element={<TimePlanner />} />
             <Route path="/project-track" element={<ProjectPlanner />} />
+            <Route path="/todo-list" element={<ToDoList />} />
           </Route>
         </Routes>
       </main>
@@ -171,7 +175,7 @@ const Portfolio = () => {
       {/* Footer */}
       {!menuOpen && (
         <footer className="sticky bottom-0 z-40 bg-[#000000] text-[#c2ccaa] border-t border-[#c2ccaa]/10">
-          <div className="container flex flex-wrap justify-center items-center mx-auto px-6 text-center sm:py-2 md:pt-2 lg:pt-2">
+          <div className="container mx-auto flex flex-wrap items-center justify-center gap-x-4 gap-y-1 px-4 py-2 text-center sm:px-6">
             <div className="mt-1">
               &copy; 2026{" "}
               <span>
@@ -186,9 +190,9 @@ const Portfolio = () => {
                   </a>
                 </strong>
               </span>
-              . v0.1.1 All rights reserved.
+              . v0.1.2 All rights reserved.
             </div>
-            <div className="flex justify-center space-x-6 sm:mt-2 md:mt-2 md:ml-2 lg:mt-2 lg:ml-2">
+            <div className="flex justify-center space-x-5 sm:ml-2">
               <motion.a
                 href="https://github.com/ashserrao"
                 target="_blank"
