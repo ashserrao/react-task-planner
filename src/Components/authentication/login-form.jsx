@@ -22,8 +22,8 @@ function LoginForm() {
     const password = formData.get("password")?.toString() ?? "";
 
     setLoading(true);
-    setTimeout(() => {
-      const result = login(identifier, password);
+    setTimeout(async () => {
+      const result = await login(identifier, password);
       setLoading(false);
       if (result.success) {
         navigate("/", { replace: true });

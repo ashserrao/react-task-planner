@@ -68,13 +68,13 @@ const providers = [
 
 export function SocialButtons({ action }) {
   return (
-    <div className="grid grid-cols-3 gap-3">
+    <div className="grid grid-cols-3 gap-2 sm:gap-3">
       {providers.map((p) => (
         <button
           key={p.name}
           type="button"
           aria-label={`${action} with ${p.name}`}
-          className="group flex items-center justify-center gap-2 rounded-lg border border-input bg-secondary/40 px-3 py-2.5 text-sm font-medium text-foreground transition-all duration-200 hover:-translate-y-0.5 hover:border-glow/50 hover:bg-secondary/70 hover:shadow-[0_8px_24px_-12px_rgba(107,143,163,0.6)] focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
+          className="group flex min-w-0 items-center justify-center gap-1 rounded-lg border border-input bg-secondary/40 px-2 py-2.5 text-sm font-medium text-foreground transition-all duration-200 hover:-translate-y-0.5 hover:border-glow/50 hover:bg-secondary/70 hover:shadow-[0_8px_24px_-12px_rgba(107,143,163,0.6)] focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 sm:gap-2 sm:px-3"
         >
           {p.icon}
           <span className="hidden sm:inline">{p.name}</span>
