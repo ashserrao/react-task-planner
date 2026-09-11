@@ -7,6 +7,13 @@ function capitalize(value) {
   return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 }
 
+export const DEFAULT_REMINDER_MINUTES = 30;
+
+function parseBoolean(value) {
+  if (typeof value === "boolean") return value;
+  return String(value ?? "").trim().toLowerCase() === "true";
+}
+
 function isValidDateValue(value) {
   return value && !isNaN(new Date(value).getTime());
 }

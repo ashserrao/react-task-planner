@@ -12,9 +12,12 @@ import {
   updateTaskRequest,
   deleteTaskRequest,
 } from "./api";
-import { useNotifications } from "../Components/ui/notification-service";
+import { notify } from "./notify";
+import { clearDemoTasks, loadDemoTasks, saveDemoTasks } from "./demo-data";
+import { useAuth } from "../Components/authentication/AuthContext";
 
 const STORAGE_KEY = "taskplanner:tasks";
+const NO_TASKS = [];
 
 const TimeTrackingContext = createContext(null);
 
@@ -27,42 +30,108 @@ function loadCachedTasks() {
   }
 }
 
+// "admin" → Google Sheet API, "demo" → sandbox (lib/demo-data.js), "none" → signed out.
+function loadTasksFor(mode) {
+  if (mode === "admin") return loadCachedTasks();
+  if (mode === "demo") return loadDemoTasks();
+  return [];
+}
+
 export function TimeTrackingProvider({ children }) {
-  const [tasks, setTasks] = useState(loadCachedTasks);
+  const { user, isAdmin } = useAuth();
+  const mode = !user ? "none" : isAdmin ? "admin" : "demo";
+
+  // Tasks are tagged with the mode they were loaded for, so a late API
+  // response or a stale render can never leak one account's data into another.
+  const [store, setStore] = useState(() => ({
+    mode,
+    tasks: loadTasksFor(mode),
+  }));
+  const tasks = store.mode === mode ? store.tasks : NO_TASKS;
   const [selectedDate, setSelectedDate] = useState(() => new Date());
-  const { notify } = useNotifications();
+
+  const setTasksFor = useCallback((forMode, updater) => {
+    setStore((prev) =>
+      prev.mode !== forMode
+        ? prev
+        : {
+            mode: prev.mode,
+            tasks: typeof updater === "function" ? updater(prev.tasks) : updater,
+          },
+    );
+  }, []);
+
+  // The sheet save can succeed while the Google Calendar sync fails.
+  const notifyCalendarError = useCallback(
+    (response) => {
+      if (response?.calendarError) {
+        notify.error(
+          `Google Calendar sync failed: ${response.calendarError}`,
+          { save: true },
+        );
+      }
+    },
+    [],
+  );
 
   const refreshTasks = useCallback(async () => {
+    if (mode !== "admin") return tasks;
     try {
       const remoteTasks = await fetchTasks();
       if (Array.isArray(remoteTasks)) {
         const validTasks = remoteTasks.filter(Boolean);
-        setTasks(validTasks);
-        notify(
-          "success",
+        setTasksFor("admin", validTasks);
+        notify.success(
           `Loaded ${validTasks.length} task${validTasks.length === 1 ? "" : "s"} from the timeline.`,
         );
         return validTasks;
       }
     } catch (error) {
       console.warn("Timeline sheet unavailable, using cached tasks:", error);
-      notify(
-        "failure",
+      notify.error(
         error.message || "The timeline API could not be reached.",
+        { save: true },
       );
     }
-  }, [notify]);
+  }, [mode, tasks, setTasksFor]);
+
+  // Load the right data whenever the account changes.
+  useEffect(() => {
+    setStore((prev) =>
+      prev.mode === mode ? prev : { mode, tasks: loadTasksFor(mode) },
+    );
+    if (mode === "none") {
+      // Signed out: discard the demo sandbox and the cached sheet data.
+      clearDemoTasks();
+      try {
+        window.localStorage.removeItem(STORAGE_KEY);
+      } catch {}
+    }
+    if (mode === "demo") {
+      notify.info("You're using demo data", {
+        description:
+          "Changes stay in this tab and are discarded when you sign out.",
+      });
+    }
+    // refreshTasks is left out on purpose: it changes with every task edit.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode]);
 
   useEffect(() => {
-    refreshTasks();
-  }, [refreshTasks]);
+    if (mode === "admin") refreshTasks();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode]);
 
   useEffect(() => {
-    // Cache locally so the timeline still works while the sheet API is incomplete/unreachable.
-    try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
-    } catch {}
-  }, [tasks]);
+    if (store.mode === "admin") {
+      // Cache locally so the timeline still works while the sheet API is incomplete/unreachable.
+      try {
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(store.tasks));
+      } catch {}
+    } else if (store.mode === "demo") {
+      saveDemoTasks(store.tasks);
+    }
+  }, [store]);
 
   const getTasksForDate = useCallback(
     (dateString) =>
@@ -86,7 +155,20 @@ export function TimeTrackingProvider({ children }) {
         logTime: new Date().toISOString(),
         ...taskData,
       };
-      setTasks((prev) => [...prev, task]);
+
+      if (mode !== "admin") {
+        const demoTask = {
+          ...task,
+          userName: user?.email || "demo@ashtro.dev",
+          userType: "demo",
+          calendarSync: false,
+        };
+        setTasksFor(mode, (prev) => [...prev, demoTask]);
+        notify.success("Task created successfully.");
+        return demoTask;
+      }
+
+      setTasksFor("admin", (prev) => [...prev, task]);
       createTaskRequest(task)
         .then((created) => {
           const realId =
@@ -98,7 +180,7 @@ export function TimeTrackingProvider({ children }) {
           const ticketId =
             created?.["ticket id"] ?? created?.ticketId ?? realId;
           if (realId !== undefined && realId !== null) {
-            setTasks((prev) =>
+            setTasksFor("admin", (prev) =>
               prev.map((t) =>
                 t.id === tempId
                   ? {
@@ -111,62 +193,81 @@ export function TimeTrackingProvider({ children }) {
               ),
             );
           }
-          notify("success", "Task created successfully.");
+          notify.success("Task created successfully.");
+          notifyCalendarError(created);
         })
         .catch((error) => {
           console.warn("Failed to sync new task to sheet:", error);
-          notify(
-            "failure",
+          notify.error(
             error.message || "The task could not be created in the timeline.",
+            { save: true },
           );
         });
       return task;
     },
-    [notify],
+    [mode, user, setTasksFor, notifyCalendarError],
   );
 
   const updateTask = useCallback(
     (taskId, updates) => {
-      setTasks((prev) => {
+      if (mode !== "admin") {
+        setTasksFor(mode, (prev) =>
+          prev.map((task) =>
+            task.id === taskId
+              ? { ...task, ...updates, calendarSync: false }
+              : task,
+          ),
+        );
+        notify.success("Task updated successfully.");
+        return;
+      }
+
+      setTasksFor("admin", (prev) => {
         const next = prev.map((task) =>
           task.id === taskId ? { ...task, ...updates } : task,
         );
         const merged = next.find((task) => task.id === taskId);
         if (merged) {
           updateTaskRequest(taskId, merged)
-            .then(() => notify("success", "Task updated successfully."))
+            .then((updated) => {
+              notify.success("Task updated successfully.");
+              notifyCalendarError(updated);
+            })
             .catch((error) => {
               console.warn("Failed to sync task update to sheet:", error);
-              notify(
-                "failure",
-                error.message ||
-                  "The task could not be updated in the timeline.",
+              notify.error(
+                error.message || "The task could not be updated in the timeline.",
+                { save: true },
               );
             });
         }
         return next;
       });
     },
-    [notify],
+    [mode, setTasksFor, notifyCalendarError],
   );
 
   const deleteTask = useCallback(
     (taskId) => {
       const taskToDelete = tasks.find((task) => task.id === taskId);
-      setTasks((prev) => {
-        return prev.filter((task) => task.id !== taskId);
-      });
+      setTasksFor(mode, (prev) => prev.filter((task) => task.id !== taskId));
+
+      if (mode !== "admin") {
+        notify.success("Task deleted successfully.");
+        return;
+      }
+
       deleteTaskRequest(taskId, taskToDelete || {})
-        .then(() => notify("success", "Task deleted successfully."))
+        .then(() => notify.success("Task deleted successfully."))
         .catch((error) => {
           console.warn("Failed to sync task delete to sheet:", error);
-          notify(
-            "failure",
+          notify.error(
             error.message || "The task could not be deleted from the timeline.",
+            { save: true },
           );
         });
     },
-    [tasks, notify],
+    [mode, tasks, setTasksFor],
   );
 
   const moveTask = useCallback(
