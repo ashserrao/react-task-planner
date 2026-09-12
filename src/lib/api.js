@@ -1,4 +1,3 @@
-import React from "react";
 import { fromSheetRow, toSheetRow } from "./sheet-mapper";
 
 export const API_URL =
@@ -22,7 +21,11 @@ async function apiPost(action, payload = {}) {
   if (!response.ok) {
     throw new Error(`API POST "${action}" failed: ${response.status}`);
   }
-  return response.json();
+  const result = await response.json();
+  if (result?.result === "error") {
+    throw new Error(result.message || `API POST "${action}" failed`);
+  }
+  return result;
 }
 
 export async function fetchTasks() {
@@ -37,10 +40,32 @@ export function createTaskRequest(task) {
   return apiPost("create", toSheetRow(task));
 }
 
-export function updateTaskRequest(id, updates) {
-  return apiPost("update", { rowNumber: id, ...toSheetRow(updates) });
+export function updateTaskRequest(id, updates = {}) {
+  const row = toSheetRow(updates);
+  const rowNumber = updates.rowNumber;
+  const ticketId = updates.ticketId ?? updates["ticket id"];
+  if (rowNumber === undefined || rowNumber === null) {
+    return Promise.reject(
+      new Error("Cannot update a task without its sheet rowNumber"),
+    );
+  }
+  const payload = {
+    ...row,
+  };
+  if (rowNumber !== undefined) payload.rowNumber = rowNumber;
+  if (ticketId !== undefined) payload["ticket id"] = ticketId;
+  return apiPost("update", payload);
 }
 
-export function deleteTaskRequest(id) {
-  return apiPost("delete", { rowNumber: id });
+export function deleteTaskRequest(id, task = {}) {
+  const rowNumber = task.rowNumber;
+  const ticketId = task.ticketId ?? task["ticket id"];
+  if (rowNumber === undefined || rowNumber === null) {
+    return Promise.reject(
+      new Error("Cannot delete a task without its sheet rowNumber"),
+    );
+  }
+  const payload = { rowNumber };
+  if (ticketId !== undefined) payload["ticket id"] = ticketId;
+  return apiPost("delete", payload);
 }

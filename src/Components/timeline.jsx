@@ -5,9 +5,9 @@ import { Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "./ui/button";
 import { cn } from "../lib/utils";
 import {
-  HOURS,
+  TIME_SLOTS,
   formatHour,
-  getTaskHourRange,
+  getTaskSlotRange,
   tasksOverlap,
   getCategoryById,
 } from "../lib/types";
@@ -55,12 +55,12 @@ function Timeline({ onEditTask, onAddTask }) {
     setDialogState({ task: null, hour });
   };
 
-  const findNextFreeHour = (startFrom) => {
-    for (let i = 0; i < HOURS.length; i++) {
-      const candidate = (startFrom + i) % HOURS.length;
-      if (!occupiedHours.has(candidate)) return candidate;
+  const findNextFreeSlot = (startFrom) => {
+    for (let i = 0; i < TIME_SLOTS.length; i++) {
+      const candidate = (startFrom + i) % TIME_SLOTS.length;
+      if (!occupiedSlots.has(candidate)) return TIME_SLOTS[candidate].time;
     }
-    return startFrom;
+    return TIME_SLOTS[startFrom]?.time ?? 9;
   };
 
   const openEditDialog = (task) => {
@@ -74,7 +74,7 @@ function Timeline({ onEditTask, onAddTask }) {
     if (dialogState?.task) {
       updateTask(dialogState.task.id, formValues);
     } else {
-      addTask(dateString, formValues);
+      addTask(formValues.date || dateString, formValues);
     }
     closeDialog();
   };
@@ -98,20 +98,22 @@ function Timeline({ onEditTask, onAddTask }) {
     [getTasksForDate, dateString],
   );
 
-  const tasksByHour = useMemo(() => {
+  const tasksBySlot = useMemo(() => {
     const grouped = {};
-    HOURS.forEach((hour) => {
-      grouped[hour] = tasks.filter((task) => task.startHour === hour);
+    TIME_SLOTS.forEach(({ index }) => {
+      grouped[index] = tasks.filter(
+        (task) => Math.round(Number(task.startHour || 0) * 4) === index,
+      );
     });
     return grouped;
   }, [tasks]);
 
-  const occupiedHours = useMemo(() => {
+  const occupiedSlots = useMemo(() => {
     const map = new Map();
     tasks.forEach((task) => {
-      const [start, end] = getTaskHourRange(task);
-      for (let hour = start; hour < end; hour++) {
-        if (!map.has(hour)) map.set(hour, { task, isStart: hour === start });
+      const [start, end] = getTaskSlotRange(task);
+      for (let slot = start; slot < end; slot++) {
+        if (!map.has(slot)) map.set(slot, { task, isStart: slot === start });
       }
     });
     return map;
@@ -122,33 +124,34 @@ function Timeline({ onEditTask, onAddTask }) {
     if (!over) return;
 
     const taskId = active.id;
-    const overHour = parseInt(over.id);
-    if (isNaN(overHour)) return;
+    const overSlot = parseInt(over.id, 10);
+    if (isNaN(overSlot)) return;
 
     const draggedTask = tasks.find((task) => task.id === taskId);
     if (!draggedTask) return;
 
-    const candidate = { ...draggedTask, startHour: overHour };
+    const candidate = { ...draggedTask, startHour: overSlot / 4 };
     const hasConflict = tasks.some(
       (task) => task.id !== taskId && tasksOverlap(candidate, task),
     );
     if (hasConflict) return;
 
-    moveTask(taskId, overHour);
+    moveTask(taskId, overSlot / 4);
   };
 
-  const currentHour = new Date().getHours();
+  const currentSlot =
+    new Date().getHours() * 4 + Math.floor(new Date().getMinutes() / 15);
 
   return (
-    <section id="home" className="min-h-screen bg-[#000000]">
+    <section id="home" className="min-h-full bg-[#000000]">
       <HiveBackground hexRadius={60} viewWidth={900} viewHeight={600} />
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
         onDragEnd={handleDragEnd}
       >
-        <div className="container mx-auto px-4 pb-8 md:px-6">
-          <div className="rounded-xl border border-border bg-card overflow-hidden">
+        <div className="container mx-auto px-3 pb-6 sm:px-4 sm:pb-8 md:px-6">
+          <div className="overflow-hidden rounded-xl border border-border bg-card">
             {/* Header */}
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-muted/30 px-4 py-3">
               <div>
@@ -161,7 +164,7 @@ function Timeline({ onEditTask, onAddTask }) {
                 </p>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center justify-end gap-2 sm:flex-nowrap">
                 <button
                   type="button"
                   onClick={goToPreviousDay}
@@ -193,7 +196,7 @@ function Timeline({ onEditTask, onAddTask }) {
 
               <Button
                 size="sm"
-                onClick={() => openAddDialog(findNextFreeHour(currentHour))}
+                onClick={() => openAddDialog(findNextFreeSlot(currentSlot))}
               >
                 <Plus className="mr-2 h-4 w-4" />
                 Add task
@@ -201,19 +204,19 @@ function Timeline({ onEditTask, onAddTask }) {
             </div>
 
             {/* Timeline Grid */}
-            <div className="max-h-[65vh] overflow-y-auto sm:max-h-[70vh] xl:max-h-[calc(100vh-320px)]">
-              {HOURS.map((hour) => {
-                const hourTasks = tasksByHour[hour] || [];
-                const occupied = occupiedHours.get(hour);
+            <div className="max-h-[calc(100dvh-13rem)] overflow-y-auto sm:max-h-[calc(100dvh-15rem)]">
+              {TIME_SLOTS.map(({ time, index }) => {
+                const slotTasks = tasksBySlot[index] || [];
+                const occupied = occupiedSlots.get(index);
                 const isBlockedContinuation = occupied && !occupied.isStart;
                 const isCurrentHour =
-                  currentHour === hour &&
+                  currentSlot === index &&
                   format(new Date(), "yyyy-MM-dd") === dateString;
 
                 return (
                   <div
-                    key={hour}
-                    id={hour.toString()}
+                    key={index}
+                    id={index.toString()}
                     className={cn(
                       "group relative flex border-b border-border/50 last:border-0",
                       isCurrentHour && "bg-primary/5",
@@ -222,11 +225,13 @@ function Timeline({ onEditTask, onAddTask }) {
                     {/* Time Label */}
                     <div
                       className={cn(
-                        "w-20 flex-shrink-0 border-r border-border/50 p-3 text-right",
+                        "w-20 flex-shrink-0 border-r border-border/50 p-2 text-right",
                         isCurrentHour && "text-primary font-medium",
                       )}
                     >
-                      <span className="text-sm">{formatHour(hour)}</span>
+                      <span className="text-xs sm:text-sm">
+                        {formatHour(time)}
+                      </span>
                     </div>
 
                     {/* Current time indicator */}
@@ -240,13 +245,13 @@ function Timeline({ onEditTask, onAddTask }) {
                     )}
 
                     {/* Task Area */}
-                    <div className="flex-1 min-h-[80px] p-3">
+                    <div className="min-h-[56px] flex-1 p-2 sm:min-h-[64px] sm:p-3">
                       <SortableContext
-                        items={hourTasks.map((t) => t.id)}
+                        items={slotTasks.map((t) => t.id)}
                         strategy={verticalListSortingStrategy}
                       >
                         <div className="space-y-2">
-                          {hourTasks.map((task) => (
+                          {slotTasks.map((task) => (
                             <TaskCard
                               key={task.id}
                               task={task}
@@ -257,14 +262,13 @@ function Timeline({ onEditTask, onAddTask }) {
                       </SortableContext>
 
                       {/* Blocked: hour falls inside another task's duration */}
-                      {hourTasks.length === 0 && isBlockedContinuation && (
+                      {slotTasks.length === 0 && isBlockedContinuation && (
                         <div className="flex h-8 items-center gap-2 rounded-lg border border-dashed border-border/60 bg-muted/20 px-3 text-xs text-muted-foreground">
                           <span
                             className={cn(
                               "h-1.5 w-1.5 rounded-full",
-                              getCategoryById(
-                                occupied.task.category,
-                              )?.solidBgColor || "",
+                              getCategoryById(occupied.task.category)
+                                ?.solidBgColor || "",
                             )}
                           />
                           {occupied.task.name} continues
@@ -272,15 +276,15 @@ function Timeline({ onEditTask, onAddTask }) {
                       )}
 
                       {/* Add task button (revealed on hover on desktop; always visible on touch) */}
-                      {hourTasks.length === 0 && !isBlockedContinuation && (
+                      {slotTasks.length === 0 && !isBlockedContinuation && (
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => openAddDialog(hour)}
+                          onClick={() => openAddDialog(time)}
                           className="h-8 w-full border border-dashed border-border text-muted-foreground opacity-100 transition-opacity hover:text-foreground xl:opacity-0 xl:group-hover:opacity-100"
                         >
                           <Plus className="mr-2 h-4 w-4" />
-                          Add task at {formatHour(hour)}
+                          Add task at {formatHour(time)}
                         </Button>
                       )}
                     </div>
@@ -295,6 +299,7 @@ function Timeline({ onEditTask, onAddTask }) {
           open={Boolean(dialogState)}
           task={dialogState?.task ?? null}
           defaultHour={dialogState?.hour}
+          defaultDate={dateString}
           existingTasks={tasks}
           onClose={closeDialog}
           onSubmit={handleDialogSubmit}

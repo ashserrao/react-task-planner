@@ -1,5 +1,4 @@
 import React, { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import HiveBackground from "./HiveBackground";
 import {
   format,
@@ -37,8 +36,7 @@ const MONTH_LABELS = [
 ];
 const MAX_DOTS = 4;
 
-function CalendarView() {
-  const navigate = useNavigate();
+function CalendarView({ onNavigateToTimeline }) {
   const { selectedDate, setSelectedDate, getTasksForDate } = useTimeTracking();
 
   // The month currently being displayed (independent from the selected day)
@@ -103,7 +101,7 @@ function CalendarView() {
 
   const handleDayDoubleClick = (day) => {
     setSelectedDate(day);
-    navigate("/timeline");
+    if (onNavigateToTimeline) onNavigateToTimeline();
   };
 
   // Year dropdown: a reasonable window around the current year
@@ -114,10 +112,10 @@ function CalendarView() {
   );
 
   return (
-    <section id="calendar" className="min-h-screen bg-[#000000]">
+    <section id="calendar" className="min-h-full bg-[#000000]">
       <HiveBackground hexRadius={60} viewWidth={900} viewHeight={600} />
-      <div className="container mx-auto px-4 pb-8 md:px-6">
-        <div className="rounded-xl border border-border bg-card overflow-hidden">
+      <div className="container mx-auto px-3 pb-6 sm:px-4 sm:pb-8 md:px-6">
+        <div className="overflow-hidden rounded-xl border border-border bg-card">
           {/* Header */}
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-muted/30 px-4 py-3">
             <div>
@@ -127,7 +125,7 @@ function CalendarView() {
               </p>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center justify-end gap-2 sm:flex-nowrap">
               <button
                 type="button"
                 onClick={goToPreviousMonth}
@@ -178,7 +176,7 @@ function CalendarView() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px]">
+          <div className="grid min-w-0 grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(260px,320px)]">
             {/* Calendar grid */}
             <div className="border-r border-border/50">
               {/* Weekday header row */}
@@ -217,7 +215,7 @@ function CalendarView() {
                           : "Double-click to open timeline"
                       }
                       className={cn(
-                        "group relative flex h-20 flex-col items-start gap-1 border-b border-r border-border/50 p-2 text-left transition-colors last:border-r-0 hover:bg-secondary/40 sm:h-24",
+                        "group relative flex h-16 min-w-0 flex-col items-start gap-1 border-b border-r border-border/50 p-1.5 text-left transition-colors last:border-r-0 hover:bg-secondary/40 sm:h-24 sm:p-2",
                         !inCurrentMonth && "opacity-40",
                         isSelected &&
                           "bg-primary/10 ring-1 ring-inset ring-primary/40",
@@ -271,7 +269,7 @@ function CalendarView() {
                 </p>
               </div>
 
-              <div className="flex-1 space-y-2 overflow-y-auto p-4 max-h-[50vh] lg:max-h-[calc(100vh-320px)]">
+              <div className="flex-1 space-y-2 overflow-y-auto p-4 lg:max-h-[calc(100dvh-17rem)]">
                 {activeDayTasks.length === 0 && (
                   <p className="text-sm text-muted-foreground">
                     No tasks for this day.

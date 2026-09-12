@@ -107,7 +107,7 @@ export function fromSheetRow(row) {
     date: isValidDate
       ? format(dt, "yyyy-MM-dd")
       : format(new Date(), "yyyy-MM-dd"),
-    startHour: isValidDate ? dt.getHours() : 0,
+    startHour: isValidDate ? dt.getHours() + dt.getMinutes() / 60 : 0,
     name: (
       source["Task title"] ||
       source["task title"] ||
@@ -126,7 +126,7 @@ export function fromSheetRow(row) {
       .toString()
       .trim(),
     duration: Math.max(
-      1,
+      0.25,
       Number(source["task duration"] ?? source.duration) || 1,
     ),
     priority: (source["task priority"] || source.priority || "medium")
@@ -149,6 +149,11 @@ export function fromSheetRow(row) {
     )
       .toString()
       .trim(),
+    calendarSync: parseBoolean(row["sync calendar"]),
+    reminderMinutes: isNumeric(row["reminder minutes"])
+      ? Number(row["reminder minutes"])
+      : DEFAULT_REMINDER_MINUTES,
+    calendarEventId: (row["calendar event id"] || "").toString().trim(),
   };
 }
 
@@ -162,8 +167,8 @@ export function toSheetRow(task) {
       year,
       (month || 1) - 1,
       day || 1,
-      Number(task.startHour) || 0,
-      0,
+      Math.floor((Number(task.startHour) || 0) % 24),
+      Math.round(((((Number(task.startHour) || 0) % 1) + 1) % 1) * 60),
       0,
       0,
     );
@@ -181,7 +186,7 @@ export function toSheetRow(task) {
     "task date time": !isNaN(dt.getTime())
       ? dt.toISOString()
       : new Date().toISOString(),
-    "task duration": Math.max(1, Number(task.duration) || 1),
+    "task duration": Math.max(0.25, Number(task.duration) || 1),
     "task priority": capitalize(task.priority || "medium"),
     "task category": capitalize(task.category || "other"),
     "ticket type": (task.ticketType || "task").toString().trim().toLowerCase(),
@@ -189,6 +194,11 @@ export function toSheetRow(task) {
     "user name": (task.userName || "ashserrao@ashtro.dev").toString().trim(),
     "user type": (task.userType || "admin").toString().trim(),
     "log time": task.logTime || new Date().toISOString(),
+    // "calendar event id" is owned by the Apps Script, so it is never sent.
+    "sync calendar": Boolean(task.calendarSync),
+    "reminder minutes": isNumeric(task.reminderMinutes)
+      ? Number(task.reminderMinutes)
+      : DEFAULT_REMINDER_MINUTES,
   };
 
   if (task.ticketId !== undefined && task.ticketId !== null) {

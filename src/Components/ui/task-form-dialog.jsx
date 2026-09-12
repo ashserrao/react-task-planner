@@ -1,16 +1,31 @@
 import React, { useEffect, useState } from "react";
-import { X } from "lucide-react";
+import { format } from "date-fns";
+import { CalendarPlus, X } from "lucide-react";
 import { Button } from "./button";
 import { cn } from "../../lib/utils";
 import {
-  HOURS,
+  TIME_OPTIONS,
   TASK_CATEGORIES,
   PRIORITY_CONFIG,
   formatHour,
   tasksOverlap,
 } from "../../lib/types";
+import { useTimeTracking } from "../../lib/time-tracking-context";
+import { DEFAULT_REMINDER_MINUTES } from "../../lib/sheet-mapper";
+import { useAuth } from "../authentication/AuthContext";
+
+const REMINDER_OPTIONS = [
+  { value: 0, label: "At start time" },
+  { value: 5, label: "5 minutes before" },
+  { value: 10, label: "10 minutes before" },
+  { value: 30, label: "30 minutes before" },
+  { value: 60, label: "1 hour before" },
+  { value: 120, label: "2 hours before" },
+  { value: 1440, label: "1 day before" },
+];
 
 const EMPTY_FORM = {
+  date: format(new Date(), "yyyy-MM-dd"),
   name: "",
   description: "",
   category: TASK_CATEGORIES[0].id,
@@ -18,6 +33,8 @@ const EMPTY_FORM = {
   startHour: 9,
   duration: 1,
   notes: "",
+  calendarSync: false,
+  reminderMinutes: DEFAULT_REMINDER_MINUTES,
 };
 
 const inputClass =
@@ -27,6 +44,7 @@ export function TaskFormDialog({
   open,
   task,
   defaultHour,
+  defaultDate,
   existingTasks = [],
   onClose,
   onSubmit,
@@ -34,6 +52,15 @@ export function TaskFormDialog({
 }) {
   const [form, setForm] = useState(EMPTY_FORM);
   const [error, setError] = useState("");
+  // Google Calendar sync is admin-only; demo accounts never reach the API.
+  const { isAdmin } = useAuth();
+  let getAllTasks;
+  try {
+    const context = useTimeTracking();
+    getAllTasks = context.getAllTasks;
+  } catch (e) {
+    // If used outside of provider, fallback to existingTasks
+  }
 
   useEffect(() => {
     if (!open) return;
@@ -45,13 +72,21 @@ export function TaskFormDialog({
             description: task.description || "",
             category: task.category || TASK_CATEGORIES[0].id,
             priority: task.priority || "medium",
+            date: task.date || defaultDate || format(new Date(), "yyyy-MM-dd"),
             startHour: task.startHour ?? defaultHour ?? 9,
             duration: task.duration || 1,
             notes: task.notes || "",
+            calendarSync: Boolean(task.calendarSync),
+            reminderMinutes:
+              task.reminderMinutes ?? DEFAULT_REMINDER_MINUTES,
           }
-        : { ...EMPTY_FORM, startHour: defaultHour ?? 9 },
+        : {
+            ...EMPTY_FORM,
+            date: defaultDate || format(new Date(), "yyyy-MM-dd"),
+            startHour: defaultHour ?? 9,
+          },
     );
-  }, [open, task, defaultHour]);
+  }, [open, task, defaultHour, defaultDate]);
 
   if (!open) return null;
 
@@ -61,7 +96,11 @@ export function TaskFormDialog({
     setForm((prev) => ({
       ...prev,
       [field]:
-        field === "startHour" || field === "duration" ? Number(value) : value,
+        field === "startHour" ||
+        field === "duration" ||
+        field === "reminderMinutes"
+          ? Number(value)
+          : value,
     }));
   };
 
@@ -69,7 +108,9 @@ export function TaskFormDialog({
     event.preventDefault();
     if (!form.name.trim()) return;
 
-    const conflict = existingTasks.find(
+    const conflictTasks = typeof getAllTasks === 'function' ? getAllTasks() : existingTasks;
+
+    const conflict = conflictTasks.find(
       (other) => other.id !== task?.id && tasksOverlap(form, other),
     );
     if (conflict) {
@@ -79,7 +120,7 @@ export function TaskFormDialog({
       return;
     }
 
-    onSubmit(form);
+    onSubmit(isAdmin ? form : { ...form, calendarSync: false });
   };
 
   return (
@@ -128,6 +169,19 @@ export function TaskFormDialog({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="mb-1 block text-xs text-muted-foreground">
+                Date
+              </label>
+              <input
+                type="date"
+                className={inputClass}
+                value={form.date}
+                onChange={handleChange("date")}
+                required
+              />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-xs text-muted-foreground">
                 Category
               </label>
               <select
@@ -169,9 +223,9 @@ export function TaskFormDialog({
                 value={form.startHour}
                 onChange={handleChange("startHour")}
               >
-                {HOURS.map((hour) => (
-                  <option key={hour} value={hour}>
-                    {formatHour(hour)}
+                {TIME_OPTIONS.map((time) => (
+                  <option key={time} value={time}>
+                    {formatHour(time)}
                   </option>
                 ))}
               </select>
@@ -183,8 +237,9 @@ export function TaskFormDialog({
               </label>
               <input
                 type="number"
-                min={1}
+                min={0.25}
                 max={12}
+                step={0.25}
                 className={inputClass}
                 value={form.duration}
                 onChange={handleChange("duration")}
@@ -208,6 +263,53 @@ export function TaskFormDialog({
               onChange={handleChange("notes")}
               placeholder="Optional notes"
             />
+          </div>
+
+          <div className="rounded-lg border border-border bg-secondary/20 p-3">
+            <label
+              className={cn(
+                "flex items-center gap-2 text-sm text-foreground",
+                isAdmin ? "cursor-pointer" : "cursor-not-allowed opacity-60",
+              )}
+            >
+              <input
+                type="checkbox"
+                className="h-4 w-4 accent-current"
+                disabled={!isAdmin}
+                checked={isAdmin && form.calendarSync}
+                onChange={(event) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    calendarSync: event.target.checked,
+                  }))
+                }
+              />
+              <CalendarPlus className="h-4 w-4 text-muted-foreground" />
+              Add to Google Calendar
+            </label>
+            {!isAdmin && (
+              <p className="mt-2 text-xs text-muted-foreground">
+                Not available with a demo account.
+              </p>
+            )}
+            {isAdmin && form.calendarSync && (
+              <div className="mt-3">
+                <label className="mb-1 block text-xs text-muted-foreground">
+                  Reminder
+                </label>
+                <select
+                  className={cn(inputClass, "appearance-none")}
+                  value={form.reminderMinutes}
+                  onChange={handleChange("reminderMinutes")}
+                >
+                  {REMINDER_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
 
           <div className="flex items-center justify-between pt-2">

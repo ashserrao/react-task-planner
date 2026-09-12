@@ -1,22 +1,40 @@
 export const HOURS = Array.from({ length: 24 }, (_, i) => i);
+export const TIME_OPTIONS = Array.from({ length: 96 }, (_, i) => i / 4);
+export const TIME_SLOTS = TIME_OPTIONS.map((time, index) => ({ time, index }));
+
+export function getTaskSlotRange(task) {
+  const start = Math.max(0, Math.round(Number(task.startHour || 0) * 4));
+  const duration = Math.max(0.25, Number(task.duration) || 1);
+  const end = Math.min(
+    TIME_SLOTS.length,
+    start + Math.max(1, Math.ceil(duration * 4)),
+  );
+  return [start, end];
+}
 
 export function getTaskHourRange(task) {
-  const start = task.startHour;
-  const end = Math.min(start + (task.duration || 1), HOURS.length);
+  const [startSlot, endSlot] = getTaskSlotRange(task);
+  const start = startSlot / 4;
+  const end = Math.min(endSlot / 4, HOURS.length);
   return [start, end];
 }
 
 export function tasksOverlap(a, b) {
+  if (a.date && b.date && a.date !== b.date) {
+    return false;
+  }
   const [aStart, aEnd] = getTaskHourRange(a);
   const [bStart, bEnd] = getTaskHourRange(b);
   return aStart < bEnd && bStart < aEnd;
 }
 
 export function formatHour(hour) {
-  const normalized = ((Math.round(hour) % 24) + 24) % 24;
+  const totalMinutes = ((Math.round(Number(hour) * 60) % 1440) + 1440) % 1440;
+  const normalized = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
   const period = normalized >= 12 ? "PM" : "AM";
   const displayHour = normalized % 12 === 0 ? 12 : normalized % 12;
-  return `${displayHour}:00 ${period}`;
+  return `${displayHour}:${String(minutes).padStart(2, "0")} ${period}`;
 }
 
 export const TASK_CATEGORIES = [
@@ -37,12 +55,12 @@ export const TASK_CATEGORIES = [
     solidBgColor: "bg-emerald-500",
   },
   {
-    id: "study",
-    name: "Study",
-    label: "Study",
-    color: "text-amber-300",
-    bgColor: "bg-amber-500/20",
-    solidBgColor: "bg-amber-500",
+    id: "learning",
+    name: "Learning",
+    label: "Learning",
+    color: "text-lime-300",
+    bgColor: "bg-lime-500/20",
+    solidBgColor: "bg-lime-500",
   },
   {
     id: "entertainment",
@@ -56,9 +74,17 @@ export const TASK_CATEGORIES = [
     id: "ashtro",
     name: "Ashtro",
     label: "Ashtro",
-    color: "text-cyan-300",
-    bgColor: "bg-cyan-500/20",
-    solidBgColor: "bg-cyan-500",
+    color: "text-rose-300",
+    bgColor: "bg-rose-500/20",
+    solidBgColor: "bg-rose-500",
+  },
+  {
+    id: "health",
+    name: "health",
+    label: "health",
+    color: "text-orange-300",
+    bgColor: "bg-orange-500/20",
+    solidBgColor: "bg-orange-500",
   },
   {
     id: "other",
@@ -129,4 +155,3 @@ export function getStatusConfig(status) {
     }
   );
 }
-

@@ -28,7 +28,7 @@ import {
   CollapsibleTrigger,
 } from "./collapsible";
 import { cn } from "../../lib/utils";
-import { getCategoryById, PRIORITY_CONFIG, formatHour } from "../../lib/types";
+import { getCategoryById, getPriorityConfig, formatHour } from "../../lib/types";
 import { useTimeTracking } from "../../lib/time-tracking-context";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -37,7 +37,8 @@ export function TaskCard({ task, onEdit, isDraggable = true }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const { updateTask, deleteTask } = useTimeTracking();
   const category = getCategoryById(task.category);
-  const priority = PRIORITY_CONFIG[task.priority];
+  const priority = getPriorityConfig(task.priority);
+
 
   const {
     attributes,
@@ -169,17 +170,25 @@ export function TaskCard({ task, onEdit, isDraggable = true }) {
 
           {/* Meta Info */}
           <div className="mt-3 flex flex-wrap items-center gap-2">
+            {task.ticketId !== undefined && task.ticketId !== null && (
+              <Badge
+                variant="outline"
+                className="text-xs font-mono text-muted-foreground border-border/60"
+              >
+                #{task.ticketId}
+              </Badge>
+            )}
             <Badge
               variant="secondary"
-              className={cn("text-xs", category.bgColor, category.color)}
+              className={cn("text-xs", category?.bgColor, category?.color)}
             >
-              {category.name}
+              {category?.name || "Other"}
             </Badge>
             <Badge
               variant="secondary"
-              className={cn("text-xs", priority.bgColor, priority.color)}
+              className={cn("text-xs", priority?.bgColor, priority?.color)}
             >
-              {priority.label}
+              {priority?.label || "Medium"}
             </Badge>
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
               <Clock className="h-3 w-3" />
@@ -189,6 +198,7 @@ export function TaskCard({ task, onEdit, isDraggable = true }) {
               </span>
             </div>
           </div>
+
 
           {/* Expandable Notes */}
           {task.notes && (
