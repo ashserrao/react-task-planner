@@ -22,20 +22,85 @@
   --glow: 140 252 251;
   --destructive: 239 68 68;
   --destructive-foreground: 255 255 255;
+
+  /* Brand scale for the navbar and notification centre */
+  --brand: 122 41 56;
+  --brand-strong: 106 12 11;
+  --brand-deep: 88 39 38;
+  --brand-fg: 103 199 235;
+  --brand-fg-2: 140 252 251;
+  --brand-soft: 44 22 26;
+}
+
+@layer utilities {
+  .bg-brand-gradient {
+    background-image: linear-gradient(
+      45deg,
+      rgb(var(--brand-strong)),
+      rgb(var(--brand)),
+      rgb(var(--brand-strong))
+    );
+  }
+  .bg-brand-gradient-accent {
+    background-image: linear-gradient(
+      45deg,
+      rgb(var(--brand)),
+      rgb(var(--brand-fg)),
+      rgb(var(--brand))
+    );
+  }
+  .text-brand-gradient {
+    background-image: linear-gradient(
+      45deg,
+      rgb(var(--brand-fg)),
+      rgb(var(--brand-fg-2)),
+      rgb(var(--brand-fg))
+    );
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+  }
+}
+
+/* Notification toasts: the shrinking bar doubles as the auto-close timer */
+@keyframes toast-timer {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
 }
 
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
-    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
-    sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu",
+    "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-width: 0;
+  min-height: 100%;
+}
+
+body {
+  overflow-x: hidden;
+}
+
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
-    monospace;
+  font-family:
+    source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
 }
 
 .ripple-effect::before {
