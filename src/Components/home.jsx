@@ -10,10 +10,7 @@ const Home = () => {
   const [allTasksState, setAllTasksState] = useState([]);
 
   return (
-    <section
-      id="home"
-      className="min-h-screen relative overflow-hidden"
-    >
+    <section id="home" className="relative min-h-full overflow-hidden">
       <HiveBackground hexRadius={60} viewWidth={900} viewHeight={600} />
       <HobbyTracker />
     </section>
